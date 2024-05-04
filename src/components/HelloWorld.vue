@@ -1,58 +1,234 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
+  <div class="app">
+    <h1>Running Pace Calculator</h1>
+    <p>Enter your goal finish time and distance to calculate your pace:</p>
+    <form>
+      <label for="distance">Distance:</label>
+      <select v-model="distance" id="distance">
+        <option value="5K">5K (3.1 miles)</option>
+        <option value="10K">10K (6.2 miles)</option>
+        <option value="Half Marathon">Half Marathon (13.1 miles)</option>
+        <option value="Marathon">Marathon (26.2 miles)</option>
+      </select>
+
+      <div class="slider-container">
+        <label for="time">Goal Finish Time:</label><br />
+        <div class="container">
+          <button
+            class="button"
+            type="button"
+            @click="decrementTime()"
+            :disabled="time <= 0"
+          >
+            -
+          </button>
+          &nbsp;&nbsp;&nbsp;
+          <output>{{ formattedTime }}</output>
+          &nbsp;&nbsp;&nbsp;
+          <button
+            class="button"
+            type="button"
+            @click="incrementTime()"
+            :disabled="time >= maxTimeInSeconds"
+          >
+            +</button
+          ><br />
+        </div>
+
+        <input
+          type="range"
+          v-model="time"
+          id="slider"
+          :min="minTime"
+          :max="maxTimeInSeconds"
+          @input="updateSliderTime(time)"
+        />
+
+        <label for="pace">Pace (HH:MM:SS):</label><br />
+        <output>{{ displayPace }}</output>
+      </div>
+    </form>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'HelloWorld',
-  props: {
-    msg: String
-  }
-}
+  data() {
+    return {
+      distance: "5K",
+      time: 0,
+      minTime: "0",
+      maxTimeInSeconds: 22000, // 24 hours in seconds
+      myData: "",
+      displayPace: "TBD",
+    };
+  },
+
+  methods: {
+    padZero(value) {
+      return (value < 10 ? "0" : "") + value;
+    },
+    decrementTime() {
+      this.time = this.time - 1;
+
+      this.pace(this.distance);
+    },
+    incrementTime() {
+      this.time = parseInt(this.time) + parseInt(1);
+
+      this.pace(this.distance);
+    },
+
+    pace(d) {
+      const distanceInMiles = {
+        "5K": 3.1,
+        "10K": 6.2,
+        "Half Marathon": 13.1,
+        Marathon: 26.2,
+      }[d];
+
+      const paceInSeconds = this.time / distanceInMiles;
+
+      const paceHours = Math.floor(paceInSeconds / 3600);
+      const paceMinutes = Math.floor((paceInSeconds % 3600) / 60);
+      const paceSeconds = Math.round(paceInSeconds % 60);
+
+      return `${this.padZero(paceHours)}:${this.padZero(
+        paceMinutes
+      )}:${this.padZero(paceSeconds)} per mile`;
+    },
+    updateSliderTime(t) {
+      this.time = t;
+    },
+  },
+  computed: {
+    formattedTime() {
+      const hours = Math.floor(this.time / 3600);
+      const minutes = Math.floor((this.time % 3600) / 60);
+      const seconds = this.time % 60;
+
+      return `${this.padZero(hours)}:${this.padZero(minutes)}:${this.padZero(
+        seconds
+      )}`;
+    },
+  },
+  mounted() {
+    this.time = 3000;
+    this.displayPace = this.pace(this.distance);
+  },
+  updated() {
+    this.displayPace = this.pace(this.distance);
+  },
+  watch: {
+    myData() {
+      this.displayPace = this.pace(this.distance);
+    },
+  },
+};
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-h3 {
-  margin: 40px 0 0;
+<style>
+.app {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
-ul {
-  list-style-type: none;
-  padding: 0;
+.container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 20px;
 }
-li {
-  display: inline-block;
-  margin: 0 10px;
+
+h1 {
+  font-size: 36px;
+  margin-bottom: 10px;
 }
-a {
-  color: #42b983;
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+label {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+input[type="text"],
+select {
+  font-size: 24px;
+  padding: 10px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.slider-container {
+  margin-top: 20px;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+output {
+  font-size: 48px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px;
+}
+
+.button {
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  font-size: 28px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.button:hover {
+  background-color: #3e8e41;
+}
+
+.button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Make it mobile-friendly */
+@media only screen and (max-width: 600px) {
+  .app {
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+  }
+  h1 {
+    font-size: 24px;
+  }
+  label {
+    font-size: 18px;
+  }
+  input[type="text"],
+  select {
+    font-size: 18px;
+  }
+  .slider-container {
+    margin-top: 10px;
+  }
+  output {
+    font-size: 36px;
+  }
 }
 </style>
