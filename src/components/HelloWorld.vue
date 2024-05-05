@@ -9,8 +9,26 @@
         <option value="10K">10K (6.2 miles)</option>
         <option value="Half Marathon">Half Marathon (13.1 miles)</option>
         <option value="Marathon">Marathon (26.2 miles)</option>
+        <option value="2 Miles">2 Miles</option>
+        <option value="3 Miles">3 Miles</option>
+        <option value="4 Miles">4 Miles</option>
+        <option value="5 Miles">5 Miles</option>
+        <option value="6 Miles">6 Miles</option>
+        <option value="7 Miles">7 Miles</option>
+        <option value="8 Miles">8 Miles</option>
+        <option value="9 Miles">9 Miles</option>
+        <option value="10 Miles">10 Miles</option>
+        <option value="11 Miles">11 Miles</option>
+        <option value="12 Miles">12 Miles</option>
+        <option value="13 Miles">13 Miles</option>
+        <option value="14 Miles">14 Miles</option>
+        <option value="15 Miles">15 Miles</option>
+        <option value="16 Miles">16 Miles</option>
+        <option value="17 Miles">17 Miles</option>
+        <option value="18 Miles">18 Miles</option>
+        <option value="19 Miles">19 Miles</option>
+        <option value="20 Miles">20 Miles</option>
       </select>
-
       <div class="slider-container">
         <label for="time">Goal Finish Time:</label><br />
         <div class="container">
@@ -49,6 +67,12 @@
       </div>
     </form>
   </div>
+  <footer>
+    <p>
+      View this project on
+      <a href="https://github.com/redmond2742/PaceMyRun">GitHub</a>
+    </p>
+  </footer>
 </template>
 
 <script>
@@ -58,7 +82,7 @@ export default {
       distance: "5K",
       time: 0,
       minTime: "0",
-      maxTimeInSeconds: 22000, // 24 hours in seconds
+      maxTimeInSeconds: 28800, // 24 hours in seconds
       myData: "",
       displayPace: "TBD",
     };
@@ -85,6 +109,25 @@ export default {
         "10K": 6.2,
         "Half Marathon": 13.1,
         Marathon: 26.2,
+        "2 Miles": 2,
+        "3 Miles": 3,
+        "4 Miles": 4,
+        "5 Miles": 5,
+        "6 Miles": 6,
+        "7 Miles": 7,
+        "8 Miles": 8,
+        "9 Miles": 9,
+        "10 Miles": 10,
+        "11 Miles": 11,
+        "12 Miles": 12,
+        "13 Miles": 13,
+        "14 Miles": 14,
+        "15 Miles": 15,
+        "16 Miles": 16,
+        "17 Miles": 17,
+        "18 Miles": 18,
+        "19 Miles": 19,
+        "20 Miles": 20,
       }[d];
 
       const paceInSeconds = this.time / distanceInMiles;
@@ -230,5 +273,13 @@ output {
   output {
     font-size: 36px;
   }
+}
+
+footer {
+  background-color: #f9f9f9;
+  padding: 10px;
+  text-align: center;
+  font-size: 14px;
+  color: #666;
 }
 </style>
