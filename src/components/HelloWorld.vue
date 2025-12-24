@@ -2,7 +2,7 @@
   <div class="app">
     <h1>Running Pace Calculator</h1>
     <p>Enter your goal finish time and distance to calculate your pace:</p>
-    <form>
+    <form @submit.prevent>
       <label for="distance">Distance:</label>
       <select v-model="distance" id="distance">
         <option value="5K">5K (3.1 miles)</option>
@@ -66,6 +66,88 @@
         <output>{{ displayPace }}</output>
       </div>
     </form>
+    <div class="actions">
+      <button
+        class="button"
+        type="button"
+        :disabled="time <= 0"
+        @click="logRun"
+      >
+        Log this result
+      </button>
+      <button
+        class="button secondary"
+        type="button"
+        :disabled="loggedRuns.length === 0"
+        @click="clearLog"
+      >
+        Clear log
+      </button>
+    </div>
+    <section class="log">
+      <div class="log-header">
+        <h2>Comparison Log</h2>
+        <p>Save multiple goal paces to compare side-by-side.</p>
+      </div>
+      <div v-if="loggedRuns.length === 0" class="empty-state">
+        No entries yet. Tap “Log this result” to start comparing runs.
+      </div>
+      <table v-else>
+        <thead>
+          <tr>
+            <th>Distance</th>
+            <th>Finish Time</th>
+            <th>Pace</th>
+            <th>Logged</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(run, index) in loggedRuns" :key="run.id">
+            <td>{{ run.distance }}</td>
+            <td>{{ run.time }}</td>
+            <td>{{ run.pace }}</td>
+            <td>{{ run.timestamp }}</td>
+            <td>
+              <button
+                class="link-button"
+                type="button"
+                @click="removeLog(index)"
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="share">
+      <div class="share-header">
+        <h2>Share your pace</h2>
+        <p>
+          Turn your goal into a shareable card for friends, training partners,
+          and social media.
+        </p>
+      </div>
+      <div class="share-card">
+        <div class="share-title">Pace My Run</div>
+        <div class="share-distance">{{ distance }}</div>
+        <div class="share-time">{{ formattedTime }} finish</div>
+        <div class="share-pace">{{ displayPace }}</div>
+        <div class="share-tagline">#RunGoals #PaceMyRun</div>
+      </div>
+      <div class="share-actions">
+        <button class="button" type="button" @click="copyShareText">
+          Copy share text
+        </button>
+        <button class="button secondary" type="button" @click="shareResult">
+          Share
+        </button>
+        <button class="button secondary" type="button" @click="downloadShareCard">
+          Download share card
+        </button>
+      </div>
+    </section>
   </div>
   <footer>
     <p>
@@ -80,11 +162,10 @@ export default {
   data() {
     return {
       distance: "5K",
-      time: 0,
-      minTime: "0",
+      time: 3000,
+      minTime: 0,
       maxTimeInSeconds: 28800, // 24 hours in seconds
-      myData: "",
-      displayPace: "TBD",
+      loggedRuns: [],
     };
   },
 
@@ -93,7 +174,7 @@ export default {
       return (value < 10 ? "0" : "") + value;
     },
     decrementTime() {
-      this.time = this.time - 1;
+      this.time = Math.max(this.time - 1, this.minTime);
 
       this.pace(this.distance);
     },
@@ -141,7 +222,104 @@ export default {
       )}:${this.padZero(paceSeconds)} per mile`;
     },
     updateSliderTime(t) {
-      this.time = t;
+      this.time = Number(t);
+    },
+    logRun() {
+      if (this.time <= 0) {
+        return;
+      }
+
+      this.loggedRuns.unshift({
+        id: Date.now(),
+        distance: this.distance,
+        time: this.formattedTime,
+        pace: this.displayPace,
+        timestamp: new Date().toLocaleString(),
+      });
+    },
+    removeLog(index) {
+      this.loggedRuns.splice(index, 1);
+    },
+    clearLog() {
+      this.loggedRuns = [];
+    },
+    async copyShareText() {
+      const shareText = this.shareText;
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareText);
+        return;
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.value = shareText;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    },
+    async shareResult() {
+      const shareText = this.shareText;
+
+      if (navigator.share) {
+        await navigator.share({
+          title: "Pace My Run",
+          text: shareText,
+        });
+      } else {
+        await this.copyShareText();
+      }
+    },
+    downloadShareCard() {
+      const canvas = document.createElement("canvas");
+      const width = 1080;
+      const height = 1350;
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        return;
+      }
+
+      context.fillStyle = "#0f172a";
+      context.fillRect(0, 0, width, height);
+
+      context.fillStyle = "#38bdf8";
+      context.fillRect(0, 0, width, 16);
+
+      context.fillStyle = "#f8fafc";
+      context.font = "bold 72px Arial";
+      context.textAlign = "center";
+      context.fillText("Pace My Run", width / 2, 220);
+
+      context.font = "bold 110px Arial";
+      context.fillText(this.distance, width / 2, 420);
+
+      context.font = "normal 58px Arial";
+      context.fillText(`${this.formattedTime} finish`, width / 2, 540);
+
+      context.font = "bold 64px Arial";
+      context.fillText(this.displayPace, width / 2, 660);
+
+      context.font = "normal 46px Arial";
+      context.fillStyle = "#94a3b8";
+      context.fillText("#RunGoals #PaceMyRun", width / 2, 760);
+
+      context.fillStyle = "#f8fafc";
+      context.font = "normal 40px Arial";
+      context.fillText(
+        "Share your goal pace and tag your training crew.",
+        width / 2,
+        980
+      );
+
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = "pace-my-run.png";
+      link.click();
     },
   },
   computed: {
@@ -154,17 +332,11 @@ export default {
         seconds
       )}`;
     },
-  },
-  mounted() {
-    this.time = 3000;
-    this.displayPace = this.pace(this.distance);
-  },
-  updated() {
-    this.displayPace = this.pace(this.distance);
-  },
-  watch: {
-    myData() {
-      this.displayPace = this.pace(this.distance);
+    displayPace() {
+      return this.pace(this.distance);
+    },
+    shareText() {
+      return `Goal: ${this.distance} in ${this.formattedTime} (${this.displayPace}). Ready to chase it! #RunGoals #PaceMyRun`;
     },
   },
 };
@@ -172,7 +344,7 @@ export default {
 
 <style>
 .app {
-  max-width: 400px;
+  max-width: 620px;
   margin: 40px auto;
   padding: 20px;
   background-color: #f9f9f9;
@@ -223,6 +395,113 @@ output {
   font-weight: bold;
   margin-bottom: 20px;
 }
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.log,
+.share {
+  margin-top: 30px;
+  text-align: left;
+}
+
+.log-header,
+.share-header {
+  margin-bottom: 12px;
+}
+
+.log h2,
+.share h2 {
+  margin-bottom: 6px;
+  font-size: 22px;
+}
+
+.empty-state {
+  padding: 16px;
+  background: #eef2f7;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #475569;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+th {
+  text-align: left;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.share-card {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #f8fafc;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  text-align: center;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
+}
+
+.share-title {
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #38bdf8;
+  margin-bottom: 10px;
+}
+
+.share-distance {
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.share-time {
+  font-size: 20px;
+  margin-top: 6px;
+}
+
+.share-pace {
+  font-size: 24px;
+  margin-top: 10px;
+}
+
+.share-tagline {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-top: 14px;
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
 .button-container {
   display: flex;
   justify-content: space-between;
@@ -250,6 +529,14 @@ output {
   cursor: not-allowed;
 }
 
+.button.secondary {
+  background-color: #2563eb;
+}
+
+.button.secondary:hover {
+  background-color: #1d4ed8;
+}
+
 /* Make it mobile-friendly */
 @media only screen and (max-width: 600px) {
   .app {
@@ -272,6 +559,15 @@ output {
   }
   output {
     font-size: 36px;
+  }
+
+  .actions,
+  .share-actions {
+    flex-direction: column;
+  }
+
+  table {
+    font-size: 12px;
   }
 }
 
